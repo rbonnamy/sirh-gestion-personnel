@@ -15,7 +15,7 @@
 	</servlet>
 
 	<servlet-mapping>
-		<servlet-name>EditerCollaborateursController</servlet-name>
+		<servlet-name>ListerCollaborateursController</servlet-name>
 		<url-pattern>/collaborateurs/lister</url-pattern>
 	</servlet-mapping>
 	<servlet-mapping>

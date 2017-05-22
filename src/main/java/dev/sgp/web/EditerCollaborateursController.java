@@ -1,8 +1,13 @@
 package dev.sgp.web;
 
-import java.io.IOException;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.joining;
 
-import javax.servlet.ServletException;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
+
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -10,27 +15,40 @@ import javax.servlet.http.HttpServletResponse;
 public class EditerCollaborateursController extends HttpServlet {
 
 	@Override
-	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 
-		// récupère la valeur d'un paramètre dont le nom est matricule
-		String matricule = req.getParameter("matricule");
-		String titre = req.getParameter("titre");
-		String nom = req.getParameter("nom");
-		String prenom = req.getParameter("prenom");
+		String matriculeParam = req.getParameter("matricule");
 
-		if (matricule==null || titre==null || nom==null || prenom==null){
-			resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Les informations de matricule, titre, nom et prénom sont obligatoires");
+		if (matriculeParam == null || "".equals(matriculeParam.trim())) {
+			resp.setStatus(400);
+			resp.getWriter().write("Un matricule est attendu");
+		} else {
+			resp.setContentType("text/html");
+			resp.getWriter().write("<h1>Edition de collaborateur</h1> Matricule : " + matriculeParam);
 		}
 
-		// code HTML écrit dans le corps de la réponse
-		StringBuilder builder = new StringBuilder();
-		builder.append("<h1>").append("Edition de collaborateur").append("</h1>");
-		builder.append("<ul>");
-		builder.append("<li>matricule=").append(matricule).append("</li>");
-		builder.append("<li>titre=").append(titre).append("</li>");
-		builder.append("<li>nom=").append(nom).append("</li>");
-		builder.append("<li>prénom=").append(prenom).append("</li>");
-		builder.append("</ul>");
-		resp.getWriter().write(builder.toString());
+	}
+
+	@Override
+	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+
+		Map<Boolean, List<String>> validationParams = validerParametres(req, "matricule", "titre", "nom", "prenom");
+		resp.setCharacterEncoding("utf-8");
+
+		if (validationParams.get(false) != null) {
+			resp.setStatus(400);
+			resp.getWriter().write("Les paramètres suivants sont incorrects : "
+					+ validationParams.get(false).stream().collect(joining(",")));
+		} else {
+			resp.setStatus(201);
+			resp.getWriter().write("Création d'un collaborateur avec les informations suivantes : " + validationParams
+					.get(true).stream().map(p -> p + "=" + req.getParameter(p)).collect(joining(",")));
+		}
+
+	}
+
+	private Map<Boolean, List<String>> validerParametres(HttpServletRequest req, String... params) {
+		return Stream.of(params)
+				.collect(groupingBy(param -> req.getParameter(param) != null && !"".equals(req.getParameter(param))));
 	}
 }
